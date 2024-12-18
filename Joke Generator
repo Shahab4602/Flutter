@@ -1,0 +1,119 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+void main() {
+  runApp(RandomJokeApp());
+}
+
+class RandomJokeApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Random Joke Generator',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: JokeScreen(),
+    );
+  }
+}
+
+class JokeScreen extends StatefulWidget {
+  @override
+  _JokeScreenState createState() => _JokeScreenState();
+}
+
+class _JokeScreenState extends State<JokeScreen> {
+  String setup = '';
+  String punchline = '';
+  bool isLoading = false;
+
+  Future<void> fetchJoke() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final response =
+        await http.get(Uri.parse('https://official-joke-api.appspot.com/random_joke'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        setup = data['setup'];
+        punchline = data['punchline'];
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        setup = 'Failed to fetch a joke.';
+        punchline = '';
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchJoke();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Random Joke Generator'),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: isLoading
+            ? CircularProgressIndicator()
+            : Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Card(
+                      elevation: 5,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            Text(
+                              setup,
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              punchline,
+                              style: TextStyle(fontSize: 16),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: fetchJoke,
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                      ),
+                      child: Text(
+                        'Get Another Joke',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+}
